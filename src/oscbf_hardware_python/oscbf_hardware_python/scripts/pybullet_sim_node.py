@@ -22,10 +22,10 @@ from sensor_msgs.msg import JointState
 from oscbf_msgs.msg import EEState
 
 from oscbf_hardware_python.utils.rotations_and_transforms import xyzw_to_rotation_numpy
-from oscbf_hardware_python.core.manipulator import Manipulator, load_panda
-from oscbf_hardware_python.core.oscbf_configs import OSCBFTorqueConfig
-from oscbf_hardware_python.core.controllers import PoseTaskTorqueController
-from oscbf_hardware_python.core.manipulation_env import FrankaTorqueControlEnv
+from oscbf.core.manipulator import Manipulator, load_panda
+from oscbf.core.oscbf_configs import OSCBFTorqueConfig
+from oscbf.core.controllers import PoseTaskTorqueController
+from oscbf.core.manipulation_env import FrankaTorqueControlEnv
 
 
 class PybulletNode(Node):
