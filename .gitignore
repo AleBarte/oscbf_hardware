@@ -1,0 +1,24 @@
+# ROS2 build artifacts
+build/
+install/
+log/
+
+# Python artifacts
+*.pyc
+__pycache__
+*.egg-info/*
+
+# C++ artifacts
+*.o
+*.so
+*.a
+
+# Python venv management
+.python-version
+.venv/
+venv/
+env/
+
+# Editors
+.vscode/
+

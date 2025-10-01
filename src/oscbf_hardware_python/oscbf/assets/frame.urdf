@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<robot name="xyz_frame">
+    <!-- X-axis cylinder -->
+    <link name="x_axis">
+        <visual>
+            <geometry>
+                <cylinder length="1.0" radius="0.05"/>
+            </geometry>
+            <material name="red">
+                <color rgba="1 0 0 1"/>
+            </material>
+            <origin xyz="0.5 0 0" rpy="0 1.57079 0"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder length="1.0" radius="0.05"/>
+            </geometry>
+            <origin xyz="0.5 0 0" rpy="0 1.57079 0"/>
+        </collision>
+        <inertial>
+            <origin xyz="0.5 0 0" rpy="0 0 0"/>
+            <mass value="1.0"/>
+            <!-- Inertia is probably wrong -->
+            <inertia ixx="0.0025" ixy="0.0" ixz="0.0" iyy="0.0833" iyz="0.0" izz="0.0833"/>
+        </inertial>
+    </link>
+
+    <!-- Y-axis cylinder -->
+    <link name="y_axis">
+        <visual>
+            <geometry>
+                <cylinder length="1.0" radius="0.05"/>
+            </geometry>
+            <material name="green">
+                <color rgba="0 1 0 1"/>
+            </material>
+            <origin xyz="0 0.5 0" rpy="1.57079 0 0"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder length="1.0" radius="0.05"/>
+            </geometry>
+            <origin xyz="0 0.5 0" rpy="1.57079 0 0"/>
+        </collision>
+        <inertial>
+            <origin xyz="0 0.5 0" rpy="0 0 0"/>
+            <mass value="1.0"/>
+            <!-- Inertia is probably wrong -->
+            <inertia ixx="0.0833" ixy="0.0" ixz="0.0" iyy="0.0025" iyz="0.0" izz="0.0833"/>
+        </inertial>
+    </link>
+
+    <!-- Z-axis cylinder -->
+    <link name="z_axis">
+        <visual>
+            <geometry>
+                <cylinder length="1.0" radius="0.05"/>
+            </geometry>
+            <material name="blue">
+                <color rgba="0 0 1 1"/>
+            </material>
+            <origin xyz="0 0 0.5" rpy="0 0 0"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder length="1.0" radius="0.05"/>
+            </geometry>
+            <origin xyz="0 0 0.5" rpy="0 0 0"/>
+        </collision>
+        <inertial>
+            <origin xyz="0 0 0.5" rpy="0 0 0"/>
+            <mass value="1.0"/>
+            <!-- Inertia is probably wrong -->
+            <inertia ixx="0.0833" ixy="0.0" ixz="0.0" iyy="0.0833" iyz="0.0" izz="0.0025"/>
+        </inertial>
+    </link>
+
+    <!-- Joint Definitions -->
+    <joint name="x_axis_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="x_axis"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="y_axis_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="y_axis"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="z_axis_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="z_axis"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Base Link -->
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <sphere radius="0.05"/>
+            </geometry>
+            <material name="grey">
+                <color rgba="0.5 0.5 0.5 1"/>
+            </material>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.05"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </collision>
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="1e-3"/>
+            <inertia ixx="1e-6" ixy="0.0" ixz="0.0" iyy="1e-6" iyz="0.0" izz="1e-6"/>
+        </inertial>
+    </link>
+</robot>
