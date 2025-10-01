@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = "oscbf"
+package_name = "oscbf_hardware_python"
 
 setup(
     name=package_name,
@@ -32,8 +32,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "controller = oscbf.scripts.franka_control_node:main",
-            "ee_traj_node = oscbf.scripts.traj_node:main",
+            "controller = oscbf_hardware_python.scripts.franka_control_node:main",
+            "ee_traj_node = oscbf_hardware_python.scripts.traj_node:main",
         ],
     },
 )

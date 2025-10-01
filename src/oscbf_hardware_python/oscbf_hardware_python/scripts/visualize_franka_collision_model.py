@@ -3,9 +3,9 @@
 import pybullet
 import numpy as np
 
-import oscbf.core.franka_collision_model as colmodel
-from oscbf.core.manipulator import create_transform_numpy, load_panda
-from oscbf.utils.visualization import visualize_3D_sphere
+import oscbf_hardware_python.core.franka_collision_model as colmodel
+from oscbf_hardware_python.core.manipulator import create_transform_numpy, load_panda
+from oscbf_hardware_python.utils.visualization import visualize_3D_sphere
 
 np.random.seed(0)
 

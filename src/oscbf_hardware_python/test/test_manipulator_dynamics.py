@@ -2,8 +2,8 @@
 
 import unittest
 
-from oscbf.core.manipulator import Manipulator
-from oscbf.utils.general_utils import find_assets_dir
+from oscbf_hardware_python.core.manipulator import Manipulator
+from oscbf_hardware_python.utils.general_utils import find_assets_dir
 
 import pybullet
 import jax.numpy as jnp

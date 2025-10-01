@@ -8,7 +8,7 @@ import jax.numpy as jnp
 import numpy as np
 import matplotlib.pyplot as plt
 
-from oscbf.core.manipulator import load_panda
+from oscbf_hardware_python.core.manipulator import load_panda
 from read_rosbags import load_ros2_bag
 
 

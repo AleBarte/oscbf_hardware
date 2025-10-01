@@ -14,11 +14,11 @@ import pybullet
 import pybullet_data
 from pybullet_utils.bullet_client import BulletClient
 
-from oscbf.core.manipulator import Manipulator, load_panda
-from oscbf.utils.visualization import visualize_3D_box
-from oscbf.utils.general_utils import stdout_redirected
-from oscbf.core.controllers import PoseTaskVelocityController, PoseTaskTorqueController
-from oscbf.utils.trajectory import TaskTrajectory
+from oscbf_hardware_python.core.manipulator import Manipulator, load_panda
+from oscbf_hardware_python.utils.visualization import visualize_3D_box
+from oscbf_hardware_python.utils.general_utils import stdout_redirected
+from oscbf_hardware_python.core.controllers import PoseTaskVelocityController, PoseTaskTorqueController
+from oscbf_hardware_python.utils.trajectory import TaskTrajectory
 
 
 class ManipulationEnv:

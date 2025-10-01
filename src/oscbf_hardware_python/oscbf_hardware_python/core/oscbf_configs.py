@@ -16,7 +16,7 @@ import jax.numpy as jnp
 import numpy as np
 from cbfpy import CBFConfig
 
-from oscbf.core.manipulator import Manipulator
+from oscbf_hardware_python.core.manipulator import Manipulator
 
 USE_CENTRIFUGAL_CORIOLIS_IN_CBF = True
 

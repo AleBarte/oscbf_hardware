@@ -9,7 +9,7 @@ seemed to best handle the frame definitions and merging fixed links.
 """
 
 import numpy as np
-from oscbf.utils import urdfpy
+from oscbf_hardware_python.utils import urdfpy
 
 
 def parse_urdf(filename):

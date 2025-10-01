@@ -13,7 +13,7 @@ from rclpy.qos import (
 from oscbf_msgs.msg import EEState
 from geometry_msgs.msg import Point, Quaternion, Vector3
 
-from oscbf.utils.trajectory import SinusoidalTaskTrajectory
+from oscbf_hardware_python.utils.trajectory import SinusoidalTaskTrajectory
 
 
 class EETrajNode(Node):

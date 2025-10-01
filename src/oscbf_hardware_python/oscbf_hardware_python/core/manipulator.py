@@ -8,8 +8,8 @@ from jax.typing import ArrayLike
 import jax.numpy as jnp
 import numpy as np
 
-from oscbf.utils.urdf_parser import parse_urdf
-from oscbf.core.franka_collision_model import franka_collision_data
+from oscbf_hardware_python.utils.urdf_parser import parse_urdf
+from oscbf_hardware_python.core.franka_collision_model import franka_collision_data
 
 
 def tuplify(arr):

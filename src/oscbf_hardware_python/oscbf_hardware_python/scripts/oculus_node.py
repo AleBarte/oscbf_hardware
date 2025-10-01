@@ -22,8 +22,8 @@ from oscbf_msgs.msg import EEState
 from geometry_msgs.msg import Point, Quaternion, Vector3
 from sensor_msgs.msg import JointState
 
-from oscbf.core.manipulator import load_panda, Manipulator, tuplify
-from oscbf.utils.rotations_and_transforms import (
+from oscbf_hardware_python.core.manipulator import load_panda, Manipulator, tuplify
+from oscbf_hardware_python.utils.rotations_and_transforms import (
     invert_transform_numpy,
     Rx,
     Rz,

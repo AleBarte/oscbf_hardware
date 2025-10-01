@@ -13,7 +13,7 @@ might appear to be lower than expected
 import pybullet
 import numpy as np
 
-from oscbf.core.manipulator import Manipulator
+from oscbf_hardware_python.core.manipulator import Manipulator
 
 URDF = "oscbf/assets/franka_panda/panda.urdf"
 FRANKA_INIT_QPOS = np.array(
