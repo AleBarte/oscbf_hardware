@@ -12,18 +12,11 @@ setup(
     ],
     install_requires=[
         "setuptools",
-        "numpy<2",  # Pybullet has trouble with numpy 2.0
-        "jax==0.4.30",
-        "jaxlib==0.4.30",
-        "cbfpy",
-        "qpax",
-        "pybullet",
-        "matplotlib",
-        # Dependencies from urdfpy... I should try to remove some of these
-        "networkx",
-        "lxml",
-        "trimesh",
+        "pyyaml",
     ],
+    extras_require={
+        "oscbf": ["oscbf @ git+https://github.com/StanfordASL/oscbf"],
+    },
     zip_safe=True,
     maintainer="dmorton",
     maintainer_email="danielpmorton@gmail.com",
