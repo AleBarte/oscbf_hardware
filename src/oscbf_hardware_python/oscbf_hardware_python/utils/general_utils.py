@@ -20,7 +20,7 @@ def find_toplevel_dir():
 
 
 def find_assets_dir():
-    assets_dir = os.path.join(find_toplevel_dir(), "oscbf/assets/")
+    assets_dir = os.path.join(find_toplevel_dir(), "oscbf_hardware_python/assets/")
     if not os.path.exists(assets_dir):
         raise RuntimeError("Assets directory not found")
     return assets_dir
