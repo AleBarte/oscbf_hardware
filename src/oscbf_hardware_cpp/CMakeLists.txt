@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(oscbf_libfranka_ros2)
+project(oscbf_hardware_cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
