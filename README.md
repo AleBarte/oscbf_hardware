@@ -1,6 +1,9 @@
 # OSCBF ROS2 Workspace
 
-Fast, safe teleoperation of the Franka Panda hardware with OSCBF
+Fast, safe manipulator teleoperation with [OSCBF](https://github.com/StanfordASL/oscbf)
+
+Currently supported hardware platforms:
+- Franka Emika Panda
 
 ## Installation
 

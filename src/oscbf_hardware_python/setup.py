@@ -13,8 +13,13 @@ setup(
     install_requires=[
         "setuptools",
         "pyyaml",
+        "catkin_pkg",
+        "empy",
+        "lark",
     ],
     extras_require={
+        # Note: it's better if oscbf is cloned and installed first
+        # but you can have pip retrieve it if desired
         "oscbf": ["oscbf @ git+https://github.com/StanfordASL/oscbf"],
     },
     zip_safe=True,
@@ -27,6 +32,7 @@ setup(
         "console_scripts": [
             "controller = oscbf_hardware_python.scripts.franka_control_node:main",
             "ee_traj_node = oscbf_hardware_python.scripts.traj_node:main",
+            "oculus_node = oscbf_hardware_python.scripts.oculus_node:main",
         ],
     },
 )
