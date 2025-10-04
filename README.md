@@ -44,6 +44,11 @@ Finally, you'll need to clone this repo for the ROS2 hardware code
 ```
 git clone https://github.com/StanfordASL/oscbf_hardware_ws
 ```
+Then, install python dependencies:
+```
+cd oscbf_hardware_ws/src/oscbf_hardware_python
+pip install -e .
+```
 To build, run the following (Remember to `source /opt/ros/YOUR_ROS2_VERSION/setup.bash` beforehand)
 ```
 cd oscbf_hardware_ws
@@ -112,7 +117,7 @@ python oscbf_hardware_python/scripts/pybullet_sim_node.py
 - Make sure that the ethernet profile is configured to Franka (see the Setting Up the Network section of [Franka FCI documentation](https://frankarobotics.github.io/docs/getting_started.html) if this is not already configured)
 - Make sure that the robot joints are unlocked (accessed via the [Franka Desk](https://172.16.0.2/desk/)) and that the emergency stop button is not depressed. The robot should be in the blue light mode to begin accepting commands over FCI. This code also currently assumes that the Franka hand is attached.
 - If the Franka node (Terminal 1) reports an error like `Move command rejected: command not possible in the current mode!`, depress and release the emergency stop to reset the mode. The robot should return to the blue light state and you can re-run the command
-
+- If you are using a virtual environment, you may get dependency issues if you launch a python node via `ros2 run`, depending on where your PYTHONPATH is pointing. I prefer to run the python nodes directly -- for example, `python oscbf_hardware_python/scripts/franka_control_node.py` with my pyenv environment active.
 
 ## Citation
 ```
