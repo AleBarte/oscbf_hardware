@@ -57,12 +57,12 @@ class DemoConfig(OSCBFTorqueConfig):
     ):
         self.q_min = robot.joint_lower_limits
         self.q_max = robot.joint_upper_limits
-        self.singularity_tol = 1e-3
+        self.singularity_tol = 1e-2
         self.whole_body_pos_min = np.asarray(whole_body_pos_min)
         self.whole_body_pos_max = np.asarray(whole_body_pos_max)
         super().__init__(robot)
 
-    def h_2(self, z, **kwargs):
+    def h_2(self, z, *args, **kwargs):
         # Extract values
         q = z[: self.num_joints]
         q_min = jnp.asarray(self.q_min)
@@ -101,6 +101,14 @@ class DemoConfig(OSCBFTorqueConfig):
                 h_whole_body_lower,
             ]
         )
+
+    def h_1(self, z, *args, **kwargs):
+        qdot = z[self.num_joints :]
+        # Joint velocity limits
+        joint_max_vels = jnp.asarray(self.robot.joint_max_velocities)
+        qdot_max = joint_max_vels
+        qdot_min = -joint_max_vels
+        return jnp.concatenate([qdot_max - qdot, qdot - qdot_min])
 
     def alpha(self, h):
         return 10.0 * h
