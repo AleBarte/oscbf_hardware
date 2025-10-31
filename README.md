@@ -1,5 +1,7 @@
 # OSCBF ROS2 Workspace
 
+[![Paper](http://img.shields.io/badge/arXiv-2503.06736-B31B1B.svg)](https://arxiv.org/abs/2503.06736)
+
 Fast, safe manipulator teleoperation with [OSCBF](https://github.com/StanfordASL/oscbf)
 
 Currently supported hardware platforms:
@@ -13,7 +15,7 @@ If using a virtual environment, keep in mind that while the OSCBF code runs on m
 
 ### Prerequisite: Libfranka
 
-For newer robots, you can probably follow the standard setup details on the [libfranka Github](https://github.com/frankarobotics/libfranka). However, our lab hsa an older Panda, which requires libfranka 0.8.0. To get this to work, I had to make a minor change to libfranka which is available [here](https://github.com/danielpmorton/libfranka_08_patch).
+For newer robots, you can probably follow the standard setup details on the [libfranka Github](https://github.com/frankarobotics/libfranka). However, our lab has an older Panda, which requires libfranka 0.8.0. To get this to work, I had to make a minor change to libfranka which is available [here](https://github.com/danielpmorton/libfranka_08_patch).
 
 ### Prerequisite: Oculus Reader
 
@@ -30,7 +32,7 @@ When working with the Quest hardware, the following tips might be useful:
 
 ### OSCBF
 
-Run the following to download the OSCBF code and pip install it in your python environment. Note: you can clone this to whatever directory you prefer. 
+Run the following to download the OSCBF code and pip install it in your python environment. Note: you can clone this to whatever directory you prefer.
 ```
 git clone https://github.com/stanfordasl/oscbf
 cd oscbf
@@ -98,7 +100,7 @@ Terminal 3 can be replaced with a trajectory node, which publishes just the desi
 cd oscbf_hardware_ws
 source install/setup.bash
 cd src/oscbf_hardware_python
-python oscbf_hardware_python/scripts/oculus_node.py
+python oscbf_hardware_python/scripts/traj_node.py
 ```
 
 #### Testing in simulation
