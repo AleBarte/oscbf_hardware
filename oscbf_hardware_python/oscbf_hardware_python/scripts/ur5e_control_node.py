@@ -203,7 +203,20 @@ class OSCBFNode(Node):
         self.last_joint_state = np.array([msg.position, msg.velocity]).ravel()
 
     def desired_joint_vel_callback(self, msg: Float64MultiArray):
-        self.desired_joint_vel = np.asarray(msg.data)
+        # Create a mapping of joint names to their indices
+        joint_order = [f"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", 
+                       "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
+
+        # Sort the message data according to the expected joint order
+        sorted_positions = np.zeros(len(joint_order))
+        sorted_velocities = np.zeros(len(joint_order))
+
+        for i, joint_name in enumerate(joint_order):
+            msg_idx = msg.name.index(joint_name)
+            sorted_positions[i] = msg.position[msg_idx]
+            sorted_velocities[i] = msg.velocity[msg_idx]
+
+        self.last_joint_state = np.array([sorted_positions, sorted_velocities]).ravel()
 
     def publish_control(self):
         if self.last_joint_state is None or self.desired_joint_vel is None:
