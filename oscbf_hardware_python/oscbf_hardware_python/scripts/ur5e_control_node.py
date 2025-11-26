@@ -48,67 +48,15 @@ class UR5Config(OSCBFVelocityConfig):
     - Singularity avoidance
     - Whole-body set containment
     """
-
-    def __init__(
-        self,
-        robot: Manipulator,
-        whole_body_pos_min: ArrayLike,
-        whole_body_pos_max: ArrayLike,
-    ):
-        self.q_min = robot.joint_lower_limits
-        self.q_max = robot.joint_upper_limits
-        self.singularity_tol = 1e-2
-        self.whole_body_pos_min = np.asarray(whole_body_pos_min)
-        self.whole_body_pos_max = np.asarray(whole_body_pos_max)
+    def __init__(self, robot: Manipulator, pos_min: ArrayLike, pos_max: ArrayLike):
+        self.pos_min = np.asarray(pos_min)
+        self.pos_max = np.asarray(pos_max)
         super().__init__(robot)
 
-    def h_2(self, z, *args, **kwargs):
-        # Extract values
+    def h_1(self, z, **kwargs):
         q = z[: self.num_joints]
-        q_min = jnp.asarray(self.q_min)
-        q_max = jnp.asarray(self.q_max)
-
-        # Joint Limit Avoidance
-        h_joint_limits = jnp.concatenate([q_max - q, q - q_min])
-
-        # Singularity Avoidance
-        sigmas = jax.lax.linalg.svd(self.robot.ee_jacobian(q), compute_uv=False)
-        h_singularity = jnp.array([jnp.prod(sigmas) - self.singularity_tol])
-
-        # Collision Avoidance
-        robot_collision_pos_rad = self.robot.link_collision_data(q)
-        robot_collision_positions = robot_collision_pos_rad[:, :3]
-        robot_collision_radii = robot_collision_pos_rad[:, 3, None]
-        robot_num_pts = robot_collision_positions.shape[0]
-
-        # Whole-body Set Containment
-        h_whole_body_upper = (
-            jnp.tile(self.whole_body_pos_max, (robot_num_pts, 1))
-            - robot_collision_positions
-            - robot_collision_radii
-        ).ravel()
-        h_whole_body_lower = (
-            robot_collision_positions
-            - jnp.tile(self.whole_body_pos_min, (robot_num_pts, 1))
-            - robot_collision_radii
-        ).ravel()
-
-        return jnp.concatenate(
-            [
-                h_joint_limits,
-                h_singularity,
-                h_whole_body_upper,
-                h_whole_body_lower,
-            ]
-        )
-
-    def h_1(self, z, *args, **kwargs):
-        qdot = z[self.num_joints :]
-        # Joint velocity limits
-        joint_max_vels = jnp.asarray(self.robot.joint_max_velocities)
-        qdot_max = joint_max_vels
-        qdot_min = -joint_max_vels
-        return jnp.concatenate([qdot_max - qdot, qdot - qdot_min])
+        ee_pos = self.robot.ee_position(q)
+        return jnp.concatenate([self.pos_max - ee_pos, ee_pos - self.pos_min])
 
     def alpha(self, h):
         return 10.0 * h
@@ -117,7 +65,7 @@ class UR5Config(OSCBFVelocityConfig):
         return 10.0 * h_2
 
 
-@partial(jax.jit, static_argnums=(0, 1, 2))
+@partial(jax.jit, static_argnums=(0, 1))
 def compute_control(
     robot: Manipulator,
     cbf: CBF,
@@ -161,7 +109,7 @@ class OSCBFNode(Node):
         )
 
         self.desired_joint_vel_sub = self.create_subscription(
-            Float64MultiArray, "/", self.desired_joint_vel_callback, qos_profile
+            Float64MultiArray, "/dio", self.desired_joint_vel_callback, qos_profile
         )
 
         # Set up signal handlers for graceful shutdown
@@ -191,7 +139,7 @@ class OSCBFNode(Node):
 
     def _jit_compile(self):
         # Dummy values for joint state and ee state
-        z = np.zeros(self.robot.num_joints * 2)
+        z = np.zeros(self.robot.num_joints)
         desired_joint_vel = np.zeros(self.robot.num_joints)
 
         # Run an initial solve to compile
@@ -200,9 +148,6 @@ class OSCBFNode(Node):
         )
 
     def joint_state_callback(self, msg: JointState):
-        self.last_joint_state = np.array([msg.position, msg.velocity]).ravel()
-
-    def desired_joint_vel_callback(self, msg: Float64MultiArray):
         # Create a mapping of joint names to their indices
         joint_order = [f"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", 
                        "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
@@ -216,8 +161,10 @@ class OSCBFNode(Node):
             sorted_positions[i] = msg.position[msg_idx]
             sorted_velocities[i] = msg.velocity[msg_idx]
 
-        self.last_joint_state = np.array([sorted_positions, sorted_velocities]).ravel()
+        self.last_joint_state = np.array([sorted_positions]).ravel()        
 
+    def desired_joint_vel_callback(self, msg: Float64MultiArray):
+        self.desired_joint_vel = np.array(msg.data)
     def publish_control(self):
         if self.last_joint_state is None or self.desired_joint_vel is None:
             return
@@ -261,7 +208,7 @@ def main(args=None):
     except Exception as e:
         node.get_logger().error(f"Unexpected error: {e}")
     finally:
-        node.publish_zero_torques()
+        node.publish_zero_vel()
         node.destroy_node()
         rclpy.shutdown()
 
