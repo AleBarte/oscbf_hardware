@@ -30,6 +30,7 @@ from geometry_msgs.msg import Point, Quaternion, Vector3
 from std_msgs.msg import Float64MultiArray
 from sensor_msgs.msg import JointState
 from oscbf_msgs.msg import EEState
+from visualization_msgs.msg import Marker, MarkerArray
 
 from oscbf_hardware_python.utils.rotations_and_transforms import xyzw_to_rotation_numpy
 from oscbf.core.manipulator import Manipulator, load_ur5e
@@ -41,29 +42,45 @@ jax.config.update("jax_enable_x64", True)
 
 @jax.tree_util.register_static
 class UR5Config(OSCBFVelocityConfig):
-    """CBF Config for demoing OSCBF on the UR5e hardware
-
-    Safety Constraints:
-    - Joint limit avoidance
-    - Singularity avoidance
-    - Whole-body set containment
-    """
-    def __init__(self, robot: Manipulator, pos_min: ArrayLike, pos_max: ArrayLike):
-        self.pos_min = np.asarray(pos_min)
-        self.pos_max = np.asarray(pos_max)
+    def __init__(
+        self,
+        robot: Manipulator,
+        z_min: float,
+        collision_positions: ArrayLike,
+        collision_radii: ArrayLike,
+    ):
+        self.z_min = z_min
+        self.collision_positions = np.atleast_2d(collision_positions)
+        self.collision_radii = np.ravel(collision_radii)
         super().__init__(robot)
 
     def h_1(self, z, **kwargs):
+        # Extract values
         q = z[: self.num_joints]
-        ee_pos = self.robot.ee_position(q)
-        return jnp.concatenate([self.pos_max - ee_pos, ee_pos - self.pos_min])
+        # Collision Avoidance
+        robot_collision_pos_rad = self.robot.link_collision_data(q)
+        robot_collision_positions = robot_collision_pos_rad[:, :3]
+        robot_collision_radii = robot_collision_pos_rad[:, 3, None]
+        center_deltas = (
+            robot_collision_positions[:, None, :] - self.collision_positions[None, :, :]
+        ).reshape(-1, 3)
+        radii_sums = (
+            robot_collision_radii[:, None] + self.collision_radii[None, :]
+        ).reshape(-1)
+        h_collision = jnp.linalg.norm(center_deltas, axis=1) - radii_sums
+
+        # Whole body table avoidance
+        h_table = (
+            robot_collision_positions[:, 2] - self.z_min - robot_collision_radii.ravel()
+        )
+
+        return jnp.concatenate([h_collision, h_table])
 
     def alpha(self, h):
         return 10.0 * h
 
     def alpha_2(self, h_2):
         return 10.0 * h_2
-
 
 @partial(jax.jit, static_argnums=(0, 1))
 def compute_control(
@@ -104,6 +121,10 @@ class OSCBFNode(Node):
         self.vel_cmd_pub = self.create_publisher(
             Float64MultiArray, "/forward_velocity_controller/commands", qos_profile
         )
+
+        self.marker_pub = self.create_publisher(
+            MarkerArray, "/oscbf/collision_objects", 10
+        )
         self.joint_state_sub = self.create_subscription(
             JointState, "/joint_states", self.joint_state_callback, qos_profile
         )
@@ -124,16 +145,35 @@ class OSCBFNode(Node):
         self.last_joint_state = None
         self.desired_joint_vel = None
 
-        self.get_logger().info("Loading Franka model...")
+        self.get_logger().info("Loading UR5e model...")
         self.robot = load_ur5e()
 
         self.get_logger().info("Creating CBF...")
-        self.cbf_config = UR5Config(self.robot, whole_body_pos_min, whole_body_pos_max)
+
+        z_min = 0.1
+        num_bodies = 4
+        max_num_bodies = 4
+
+        # Sample a lot of collision bodies
+        all_collision_pos = np.random.uniform(
+            low=[0.2, -0.4, 0.1], high=[0.8, 0.4, 0.3], size=(max_num_bodies, 3)
+        )
+        all_collision_radii = np.random.uniform(low=0.01, high=0.1, size=(max_num_bodies,))
+        # Only use a subset of them based on the desired quantity
+        collision_pos = np.atleast_2d(all_collision_pos[:num_bodies])
+        collision_radii = all_collision_radii[:num_bodies]
+
+        self.collision_positions = collision_pos
+        self.collision_radii = collision_radii
+
+        self.cbf_config = UR5Config(self.robot, z_min, collision_pos, collision_radii)
         self.cbf = CBF.from_config(self.cbf_config)
 
 
         self.get_logger().info("Jit compiling OSCBF controller...")
         self._jit_compile()
+
+        self.create_timer(1.0 / 5.0, self.publish_collision_markers)
 
         self.get_logger().info("OSCBF Node initialization complete.")
 
@@ -196,6 +236,39 @@ class OSCBFNode(Node):
         for _ in range(3):
             self.vel_cmd_pub.publish(msg)
             time.sleep(1 / self.control_freq)
+
+
+    def publish_collision_markers(self):
+        """Publish collision bodies as visualization markers (spheres)."""
+        if getattr(self, "collision_positions", None) is None:
+            return
+        marker_array = MarkerArray()
+        for i, pos in enumerate(self.collision_positions):
+            m = Marker()
+            m.header.stamp = self.get_clock().now().to_msg()
+            m.header.frame_id = "base_link"  # change to the appropriate frame if needed
+            m.ns = "collision_bodies"
+            m.id = int(i)
+            m.type = Marker.SPHERE
+            m.action = Marker.ADD
+            m.pose.position.x = float(pos[0])
+            m.pose.position.y = float(pos[1])
+            m.pose.position.z = float(pos[2])
+            m.pose.orientation.x = 0.0
+            m.pose.orientation.y = 0.0
+            m.pose.orientation.z = 0.0
+            m.pose.orientation.w = 1.0
+            r = float(self.collision_radii[i])
+            m.scale.x = r * 2.0
+            m.scale.y = r * 2.0
+            m.scale.z = r * 2.0
+            m.color.r = 1.0
+            m.color.g = 0.0
+            m.color.b = 0.0
+            m.color.a = 1.0
+            m.lifetime = rclpy.duration.Duration(seconds=0.5).to_msg()
+            marker_array.markers.append(m)
+        self.marker_pub.publish(marker_array)
 
 
 def main(args=None):
