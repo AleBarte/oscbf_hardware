@@ -109,7 +109,7 @@ class OSCBFNode(Node):
         )
 
         self.desired_joint_vel_sub = self.create_subscription(
-            Float64MultiArray, "/dio", self.desired_joint_vel_callback, qos_profile
+            Float64MultiArray, "/twist_to_joint_vel/commands", self.desired_joint_vel_callback, qos_profile
         )
 
         # Set up signal handlers for graceful shutdown
