@@ -61,6 +61,8 @@ class UR5Config(OSCBFVelocityConfig):
         robot_collision_pos_rad = self.robot.link_collision_data(q)
         robot_collision_positions = robot_collision_pos_rad[:, :3]
         robot_collision_radii = robot_collision_pos_rad[:, 3, None]
+        print(robot_collision_positions)
+        print(robot_collision_radii)
         center_deltas = (
             robot_collision_positions[:, None, :] - self.collision_positions[None, :, :]
         ).reshape(-1, 3)
@@ -150,7 +152,7 @@ class OSCBFNode(Node):
 
         self.get_logger().info("Creating CBF...")
 
-        z_min = 0.1
+        z_min = 0.0
         num_bodies = 4
         max_num_bodies = 4
 
