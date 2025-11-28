@@ -11,6 +11,7 @@ import signal
 import time
 import sys
 from functools import partial
+import time
 
 import jax
 import jax.numpy as jnp
@@ -35,8 +36,8 @@ from visualization_msgs.msg import Marker, MarkerArray
 from oscbf_hardware_python.utils.rotations_and_transforms import xyzw_to_rotation_numpy
 from oscbf.core.manipulator import Manipulator, load_ur5e
 from oscbf.core.oscbf_configs import OSCBFVelocityConfig
-from oscbf.core.controllers import PoseTaskTorqueController
 
+jax.config.update("jax_platform_name", "cpu")
 jax.config.update("jax_enable_x64", True)
 
 
@@ -61,8 +62,8 @@ class UR5Config(OSCBFVelocityConfig):
         robot_collision_pos_rad = self.robot.link_collision_data(q)
         robot_collision_positions = robot_collision_pos_rad[:, :3]
         robot_collision_radii = robot_collision_pos_rad[:, 3, None]
-        print(robot_collision_positions)
-        print(robot_collision_radii)
+        # print(robot_collision_positions)
+        # print(robot_collision_radii)
         center_deltas = (
             robot_collision_positions[:, None, :] - self.collision_positions[None, :, :]
         ).reshape(-1, 3)
@@ -91,8 +92,6 @@ def compute_control(
     z: ArrayLike,
     desired_joint_vel: ArrayLike,
 ):
-    q = z[: robot.num_joints]
-    qdot = z[robot.num_joints :]
 
     # Apply the CBF safety filter
     tau = cbf.safety_filter(z, desired_joint_vel)
@@ -131,9 +130,17 @@ class OSCBFNode(Node):
             JointState, "/joint_states", self.joint_state_callback, qos_profile
         )
 
+        self.joint_state_initialization_sub = self.create_subscription(
+            JointState,
+            "/joint_states",
+            self.joint_state_initialization_callback, qos_profile
+        )
+
         self.desired_joint_vel_sub = self.create_subscription(
             Float64MultiArray, "/twist_to_joint_vel/commands", self.desired_joint_vel_callback, qos_profile
         )
+
+        self.got_ordered_joint_state = False
 
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self.signal_handler)
@@ -146,9 +153,14 @@ class OSCBFNode(Node):
         self.last_vel_cmd = None
         self.last_joint_state = None
         self.desired_joint_vel = None
+        self.ordered_joint_indexes = []
+
 
         self.get_logger().info("Loading UR5e model...")
         self.robot = load_ur5e()
+
+        self.sorted_positions = np.zeros(self.robot.num_joints)
+        self.sorted_velocities = np.zeros(self.robot.num_joints)
 
         self.get_logger().info("Creating CBF...")
 
@@ -157,10 +169,18 @@ class OSCBFNode(Node):
         max_num_bodies = 4
 
         # Sample a lot of collision bodies
-        all_collision_pos = np.random.uniform(
-            low=[0.2, -0.4, 0.1], high=[0.8, 0.4, 0.3], size=(max_num_bodies, 3)
-        )
-        all_collision_radii = np.random.uniform(low=0.01, high=0.1, size=(max_num_bodies,))
+        # all_collision_pos = np.random.uniform(
+        #     low=[0.2, -0.4, 0.1], high=[0.8, 0.4, 0.3], size=(max_num_bodies, 3)
+        # )
+
+        x = 0.0
+        y = 0.4
+        all_collision_pos = np.array([[x, y, 0.03],
+                                      [x, y, 0.09],
+                                      [x, y, 0.15],
+                                      [x, y, 0.21]])
+        # all_collision_radii = np.random.uniform(low=0.01, high=0.1, size=(max_num_bodies,))
+        all_collision_radii = np.repeat(np.sqrt(3) * 0.03, len(all_collision_pos))
         # Only use a subset of them based on the desired quantity
         collision_pos = np.atleast_2d(all_collision_pos[:num_bodies])
         collision_radii = all_collision_radii[:num_bodies]
@@ -181,33 +201,46 @@ class OSCBFNode(Node):
 
     def _jit_compile(self):
         # Dummy values for joint state and ee state
-        z = np.zeros(self.robot.num_joints)
-        desired_joint_vel = np.zeros(self.robot.num_joints)
+        z = np.zeros(6)
+        desired_joint_vel = np.zeros(6)
 
         # Run an initial solve to compile
         _ = np.asarray(
             compute_control(self.robot, self.cbf, z, desired_joint_vel)
         )
 
-    def joint_state_callback(self, msg: JointState):
+    def joint_state_initialization_callback(self, msg: JointState):
+        if self.got_ordered_joint_state:
+            return
         # Create a mapping of joint names to their indices
         joint_order = [f"shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint", 
                        "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
 
-        # Sort the message data according to the expected joint order
-        sorted_positions = np.zeros(len(joint_order))
-        sorted_velocities = np.zeros(len(joint_order))
-
-        for i, joint_name in enumerate(joint_order):
+        for joint_name in joint_order:
             msg_idx = msg.name.index(joint_name)
-            sorted_positions[i] = msg.position[msg_idx]
-            sorted_velocities[i] = msg.velocity[msg_idx]
+            self.ordered_joint_indexes.append(msg_idx)
 
-        self.last_joint_state = np.array([sorted_positions]).ravel()        
+        self.got_ordered_joint_state = True
+        self.get_logger().info("Ordered joint state initialization complete.")
+
+    def joint_state_callback(self, msg: JointState):
+        start_time = time.process_time()
+        if not self.got_ordered_joint_state:
+            return
+        # Sort the message data according to the expected joint order
+        for i in range(6):
+            self.sorted_positions[i] = msg.position[self.ordered_joint_indexes[i]]
+            self.sorted_velocities[i] = msg.velocity[self.ordered_joint_indexes[i]]
+
+        self.last_joint_state = np.array([self.sorted_positions]).ravel()
+        print(F"Joint state callback time: {time.process_time() - start_time:.6f} seconds")        
 
     def desired_joint_vel_callback(self, msg: Float64MultiArray):
+        start_time = time.process_time()
         self.desired_joint_vel = np.array(msg.data)
+        print(F"Desired joint vel callback time: {time.process_time() - start_time:.6f} seconds")
     def publish_control(self):
+        start_time = time.process_time()
         if self.last_joint_state is None or self.desired_joint_vel is None:
             return
         msg = Float64MultiArray()
@@ -219,6 +252,7 @@ class OSCBFNode(Node):
         )
         msg.data = tau.tolist()
         self.vel_cmd_pub.publish(msg)
+        print(F"Control computation time: {time.process_time() - start_time:.6f} seconds")
 
     def signal_handler(self, sig, frame):
         """Handle shutdown signals by publishing zero torques."""
