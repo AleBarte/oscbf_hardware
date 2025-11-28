@@ -49,10 +49,12 @@ class UR5Config(OSCBFVelocityConfig):
         z_min: float,
         collision_positions: ArrayLike,
         collision_radii: ArrayLike,
+        singularity_tol: float = 5e-2,
     ):
         self.z_min = z_min
         self.collision_positions = np.atleast_2d(collision_positions)
         self.collision_radii = np.ravel(collision_radii)
+        self.singularity_tol = singularity_tol
         super().__init__(robot)
 
     def h_1(self, z, **kwargs):
@@ -77,7 +79,12 @@ class UR5Config(OSCBFVelocityConfig):
             robot_collision_positions[:, 2] - self.z_min - robot_collision_radii.ravel()
         )
 
-        return jnp.concatenate([h_collision, h_table])
+
+        # Singularity Avoidance
+        sigmas = jax.lax.linalg.svd(self.robot.ee_jacobian(q), compute_uv=False)
+        h_singularity = jnp.array([jnp.prod(sigmas) - self.singularity_tol])
+
+        return jnp.concatenate([h_collision, h_table, h_singularity])
 
     def alpha(self, h):
         return 10.0 * h
