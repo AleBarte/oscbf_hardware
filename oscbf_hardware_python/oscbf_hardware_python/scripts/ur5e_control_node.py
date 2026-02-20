@@ -127,7 +127,7 @@ class OSCBFNode(Node):
         )
 
         self.vel_cmd_pub = self.create_publisher(
-            Float64MultiArray, "/forward_velocity_controller/commands", qos_profile
+            Float64MultiArray, "/oscbf/commands", qos_profile
         )
 
         self.marker_pub = self.create_publisher(
