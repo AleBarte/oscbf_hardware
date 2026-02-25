@@ -172,7 +172,7 @@ class OSCBFNode(Node):
         self.get_logger().info("Creating CBF...")
 
         z_min = 0.0
-        num_bodies = 4
+        num_bodies = 8
         max_num_bodies = 4
 
         # Sample a lot of collision bodies
@@ -180,14 +180,20 @@ class OSCBFNode(Node):
         #     low=[0.2, -0.4, 0.1], high=[0.8, 0.4, 0.3], size=(max_num_bodies, 3)
         # )
 
-        x = 0.0
-        y = 0.4
-        all_collision_pos = np.array([[x, y, 0.03],
-                                      [x, y, 0.09],
-                                      [x, y, 0.15],
-                                      [x, y, 0.21]])
+        x1 = 0.45
+        y1 = 0.32
+        x2 = 0.36
+        y2 = 0.176
+        all_collision_pos = np.array([[x1, y1, 0.03],
+                                      [x1, y1, 0.09],
+                                      [x1, y1, 0.15],
+                                      [x1, y1, 0.21],
+                                      [x2, y2, 0.03],
+                                      [x2, y2, 0.09],
+                                      [x2, y2, 0.15],
+                                      [x2, y2, 0.21]])
         # all_collision_radii = np.random.uniform(low=0.01, high=0.1, size=(max_num_bodies,))
-        all_collision_radii = np.repeat(np.sqrt(3) * 0.03, len(all_collision_pos))
+        all_collision_radii = np.repeat(0.03, len(all_collision_pos))
         # Only use a subset of them based on the desired quantity
         collision_pos = np.atleast_2d(all_collision_pos[:num_bodies])
         collision_radii = all_collision_radii[:num_bodies]
