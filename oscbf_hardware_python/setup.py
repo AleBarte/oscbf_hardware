@@ -32,6 +32,7 @@ setup(
         "console_scripts": [
             "controller = oscbf_hardware_python.scripts.franka_control_node:main",
             "ur5e_control_node = oscbf_hardware_python.scripts.ur5e_control_node:main",
+            "franka_forward_torque_node = oscbf_hardware_python.scripts.franka_forward_torque:main",
             "ee_traj_node = oscbf_hardware_python.scripts.traj_node:main",
             "oculus_node = oscbf_hardware_python.scripts.oculus_node:main",
         ],
