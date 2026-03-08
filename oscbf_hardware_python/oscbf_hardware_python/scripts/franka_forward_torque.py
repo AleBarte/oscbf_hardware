@@ -110,7 +110,7 @@ class OSCBFNode(Node):
             JointState, "/joint_states", self.joint_state_callback, qos_profile
         )
         self.desired_torque_sub = self.create_subscription(
-            Float64MultiArray, "/desired_joint_torque", self.desired_torque_callback, qos_profile
+            Float64MultiArray, "/joint_torque_controller/commands", self.desired_torque_callback, qos_profile
         )
 
         signal.signal(signal.SIGINT, self.signal_handler)
@@ -150,13 +150,21 @@ class OSCBFNode(Node):
 
         self.control_freq = 1000.0
         self.timer = self.create_timer(1.0 / self.control_freq, self.publish_control)
+
         self.get_logger().info("Franka Forward Torque Node Initialized")
 
     def _jit_compile(self):
-        z = np.zeros(self.robot.num_joints * 2)
-        desired_joint_torque = np.zeros(self.robot.num_joints)
-        _ = np.asarray(compute_control(self.robot, self.cbf, z, desired_joint_torque))
-        _ = np.asarray(compute_control(self.robot, self.cbf, z, desired_joint_torque))  # second run to warm caches
+        self.compiled_control = jax.jit(compute_control, static_argnums=(0, 1)).lower(
+            self.robot, self.cbf,
+            np.zeros(self.robot.num_joints * 2),
+            np.zeros(self.robot.num_joints)
+        ).compile()
+    
+        # Warm up the compiled function
+        _ = self.compiled_control(
+            np.zeros(self.robot.num_joints * 2),
+            np.zeros(self.robot.num_joints)
+        )
 
     def joint_state_callback(self, msg: JointState):
         nj = self.robot.num_joints
