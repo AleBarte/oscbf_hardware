@@ -30,7 +30,7 @@ from rclpy.qos import (
 from geometry_msgs.msg import Point, Quaternion, Vector3
 from std_msgs.msg import Float64MultiArray
 from sensor_msgs.msg import JointState
-from oscbf_msgs.msg import EEState
+# from oscbf_msgs.msg import EEState
 from visualization_msgs.msg import Marker, MarkerArray
 
 from oscbf_hardware_python.utils.rotations_and_transforms import xyzw_to_rotation_numpy
