@@ -46,7 +46,6 @@ class FrankaConfig(OSCBFTorqueConfig):
 
     def h_2(self, z, *args, **kwargs):
         q = z[: self.num_joints]
-
         # Singularity Avoidance
         sigmas = jax.lax.linalg.svd(self.robot.ee_jacobian(q), compute_uv=False)
         h_singularity = jnp.array([jnp.prod(sigmas - self.singularity_tol)])
@@ -130,15 +129,17 @@ class OSCBFNode(Node):
 
         self.get_logger().info("Initializing CBF...")
         z_min = 0.0
-        num_bodies = 8
-        x1, y1 = 0.45, 0.32
-        x2, y2 = 0.36, 0.176
-        all_collision_pos = np.array([
-            [x1, y1, 0.03], [x1, y1, 0.09], [x1, y1, 0.15], [x1, y1, 0.21],
-            [x2, y2, 0.03], [x2, y2, 0.09], [x2, y2, 0.15], [x2, y2, 0.21],
-        ])
+        # num_bodies = 8
+        # x1, y1 = 0.45, 0.32
+        # x2, y2 = 0.36, 0.176
+        # all_collision_pos = np.array([
+        #     [x1, y1, 0.03], [x1, y1, 0.09], [x1, y1, 0.15], [x1, y1, 0.21],
+        #     [x2, y2, 0.03], [x2, y2, 0.09], [x2, y2, 0.15], [x2, y2, 0.21],
+        # ])
+        num_bodies = 1
+        all_collision_pos = np.array([[-0.5, -0.20, 0.20]])
         # all_collision_pos = np.array([[x1, y1, 0.03]])
-        all_collision_radii = np.repeat(0.03, len(all_collision_pos))
+        all_collision_radii = np.repeat(0.4, len(all_collision_pos))
         collision_pos = np.atleast_2d(all_collision_pos[:num_bodies])
         collision_radii = all_collision_radii[:num_bodies]
 
@@ -150,18 +151,20 @@ class OSCBFNode(Node):
 
         self.control_freq = 1000.0
         self.timer = self.create_timer(1.0 / self.control_freq, self.publish_control)
-
+        
         self.get_logger().info("Franka Forward Torque Node Initialized")
 
     def _jit_compile(self):
-        self.compiled_control = jax.jit(compute_control, static_argnums=(0, 1)).lower(
-            self.robot, self.cbf,
-            np.zeros(self.robot.num_joints * 2),
-            np.zeros(self.robot.num_joints)
-        ).compile()
+        # self.compiled_control = jax.jit(compute_control, static_argnums=(0, 1)).lower(
+        #     self.robot, self.cbf,
+        #     np.zeros(self.robot.num_joints * 2),
+        #     np.zeros(self.robot.num_joints)
+        # ).compile()
     
         # Warm up the compiled function
-        _ = self.compiled_control(
+        _ = compute_control(
+            self.robot,
+            self.cbf,
             np.zeros(self.robot.num_joints * 2),
             np.zeros(self.robot.num_joints)
         )
