@@ -49,7 +49,7 @@ class UR5Config(OSCBFVelocityConfig):
         z_min: float,
         collision_positions: ArrayLike,
         collision_radii: ArrayLike,
-        singularity_tol: float = 5e-2,
+        singularity_tol: float = 5e-3,
     ):
         self.z_min = z_min
         self.collision_positions = np.atleast_2d(collision_positions)
@@ -180,20 +180,19 @@ class OSCBFNode(Node):
         #     low=[0.2, -0.4, 0.1], high=[0.8, 0.4, 0.3], size=(max_num_bodies, 3)
         # )
 
-        x1 = 0.45
-        y1 = 0.32
-        x2 = 0.36
-        y2 = 0.176
+        x1 = 0.46
+        y1 = 0.16
+        x2 = 0.46
+        y2 = 0.32
         all_collision_pos = np.array([[x1, y1, 0.03],
                                       [x1, y1, 0.09],
                                       [x1, y1, 0.15],
                                       [x1, y1, 0.21],
                                       [x2, y2, 0.03],
                                       [x2, y2, 0.09],
-                                      [x2, y2, 0.15],
-                                      [x2, y2, 0.21]])
+                                      [x2, y2, 0.15],])
         # all_collision_radii = np.random.uniform(low=0.01, high=0.1, size=(max_num_bodies,))
-        all_collision_radii = np.repeat(0.03, len(all_collision_pos))
+        all_collision_radii = np.repeat(0.013, len(all_collision_pos))
         # Only use a subset of them based on the desired quantity
         collision_pos = np.atleast_2d(all_collision_pos[:num_bodies])
         collision_radii = all_collision_radii[:num_bodies]
