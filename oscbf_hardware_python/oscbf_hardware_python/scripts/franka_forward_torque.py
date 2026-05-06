@@ -38,6 +38,8 @@ class FrankaConfig(OSCBFTorqueConfig):
         collision_radii: ArrayLike,
         singularity_tol: float = 1e-2,
     ):
+        self.q_min = robot.joint_lower_limits
+        self.q_max = robot.joint_upper_limits
         self.z_min = z_min
         self.collision_positions = np.atleast_2d(collision_positions)
         self.collision_radii = np.ravel(collision_radii)
@@ -46,10 +48,15 @@ class FrankaConfig(OSCBFTorqueConfig):
 
     def h_2(self, z, *args, **kwargs):
         q = z[: self.num_joints]
-
         # Singularity Avoidance
-        sigmas = jax.lax.linalg.svd(self.robot.ee_jacobian(q), compute_uv=False)
-        h_singularity = jnp.array([jnp.prod(sigmas - self.singularity_tol)])
+        q_min = jnp.asarray(self.q_min)
+        q_max = jnp.asarray(self.q_max)
+
+        # Joint Limit Avoidance
+        h_joint_limits = jnp.concatenate([q_max - q, q - q_min])
+
+        # sigmas = jax.lax.linalg.svd(self.robot.ee_jacobian(q), compute_uv=False)
+        # h_singularity = jnp.array([jnp.prod(sigmas - self.singularity_tol)])
 
         # Collision Avoidance
         robot_collision_pos_rad = self.robot.link_collision_data(q)
@@ -67,12 +74,24 @@ class FrankaConfig(OSCBFTorqueConfig):
 
         h_collision = jnp.linalg.norm(center_deltas, axis=1) - radii_sums
 
+        # Self collision avoidance
+        # robot_collision_pos_rad = self.robot.link_self_collision_data(q)
+        # robot_collision_positions = robot_collision_pos_rad[:, :3]
+        # robot_collision_radii = robot_collision_pos_rad[:, 3]
+        # pairs = jnp.asarray(self.robot.self_collision_pairs)
+        # pos_a = robot_collision_positions[pairs[:, 0]]
+        # pos_b = robot_collision_positions[pairs[:, 1]]
+        # rad_a = robot_collision_radii[pairs[:, 0]]
+        # rad_b = robot_collision_radii[pairs[:, 1]]
+        # center_deltas = pos_b - pos_a
+        # h_self_collision = jnp.linalg.norm(center_deltas, axis=-1) - rad_a - rad_b
+
         # Whole body table avoidance
         h_table = (
-            robot_collision_positions[:, 2] - robot_collision_radii.ravel() - self.z_min
+            robot_collision_positions[-7:, 1] - robot_collision_radii[-7:].ravel() - self.z_min
         )
 
-        return jnp.concatenate([h_collision, h_singularity, h_table])
+        return jnp.concatenate([h_joint_limits, h_collision, h_table])
 
     def alpha(self, h):
         return 10.0 * h
@@ -129,16 +148,18 @@ class OSCBFNode(Node):
         self.cmd_msg.data = [0.0] * nj        # pre-allocate the list once
 
         self.get_logger().info("Initializing CBF...")
-        z_min = 0.0
-        num_bodies = 8
-        x1, y1 = 0.45, 0.32
-        x2, y2 = 0.36, 0.176
-        all_collision_pos = np.array([
-            [x1, y1, 0.03], [x1, y1, 0.09], [x1, y1, 0.15], [x1, y1, 0.21],
-            [x2, y2, 0.03], [x2, y2, 0.09], [x2, y2, 0.15], [x2, y2, 0.21],
-        ])
+        z_min = 0.15
+        # num_bodies = 8
+        # x1, y1 = 0.45, 0.32
+        # x2, y2 = 0.36, 0.176
+        # all_collision_pos = np.array([
+        #     [x1, y1, 0.03], [x1, y1, 0.09], [x1, y1, 0.15], [x1, y1, 0.21],
+        #     [x2, y2, 0.03], [x2, y2, 0.09], [x2, y2, 0.15], [x2, y2, 0.21],
+        # ])
+        num_bodies = 2
+        all_collision_pos = np.array([[0.0, 0.48, 0.15], [0.0, 0.48, 0.05]])
         # all_collision_pos = np.array([[x1, y1, 0.03]])
-        all_collision_radii = np.repeat(0.03, len(all_collision_pos))
+        all_collision_radii = np.repeat(0.05, len(all_collision_pos))
         collision_pos = np.atleast_2d(all_collision_pos[:num_bodies])
         collision_radii = all_collision_radii[:num_bodies]
 
@@ -150,18 +171,20 @@ class OSCBFNode(Node):
 
         self.control_freq = 1000.0
         self.timer = self.create_timer(1.0 / self.control_freq, self.publish_control)
-
+        
         self.get_logger().info("Franka Forward Torque Node Initialized")
 
     def _jit_compile(self):
-        self.compiled_control = jax.jit(compute_control, static_argnums=(0, 1)).lower(
-            self.robot, self.cbf,
-            np.zeros(self.robot.num_joints * 2),
-            np.zeros(self.robot.num_joints)
-        ).compile()
+        # self.compiled_control = jax.jit(compute_control, static_argnums=(0, 1)).lower(
+        #     self.robot, self.cbf,
+        #     np.zeros(self.robot.num_joints * 2),
+        #     np.zeros(self.robot.num_joints)
+        # ).compile()
     
         # Warm up the compiled function
-        _ = self.compiled_control(
+        _ = compute_control(
+            self.robot,
+            self.cbf,
             np.zeros(self.robot.num_joints * 2),
             np.zeros(self.robot.num_joints)
         )
