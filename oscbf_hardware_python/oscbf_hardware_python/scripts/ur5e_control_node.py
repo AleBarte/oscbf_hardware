@@ -245,12 +245,12 @@ class OSCBFNode(Node):
             self.sorted_velocities[i] = msg.velocity[self.ordered_joint_indexes[i]]
 
         self.last_joint_state = np.array([self.sorted_positions]).ravel()
-        print(F"Joint state callback time: {time.process_time() - start_time:.6f} seconds")        
+        # print(F"Joint state callback time: {time.process_time() - start_time:.6f} seconds")        
 
     def desired_joint_vel_callback(self, msg: Float64MultiArray):
         start_time = time.process_time()
         self.desired_joint_vel = np.array(msg.data)
-        print(F"Desired joint vel callback time: {time.process_time() - start_time:.6f} seconds")
+        # print(F"Desired joint vel callback time: {time.process_time() - start_time:.6f} seconds")
     def publish_control(self):
         start_time = time.process_time()
         if self.last_joint_state is None or self.desired_joint_vel is None:
@@ -264,7 +264,7 @@ class OSCBFNode(Node):
         )
         msg.data = tau.tolist()
         self.vel_cmd_pub.publish(msg)
-        print(F"Control computation time: {time.process_time() - start_time:.6f} seconds")
+        # print(F"Control computation time: {time.process_time() - start_time:.6f} seconds")
 
     def signal_handler(self, sig, frame):
         """Handle shutdown signals by publishing zero torques."""
