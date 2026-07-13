@@ -13,22 +13,6 @@ Currently supported hardware platforms:
 
 If using a virtual environment, keep in mind that while the OSCBF code runs on multiple python versions (tested: 3.10, 3.11, 3.12), to get it to work with ROS2, you'll need the python version to match with your ROS2 python version. For ROS2 Humble, this means 3.10.x, and for ROS2 Jazzy, this means 3.12.x. 
 
-### Prerequisite: Libfranka
-
-For newer robots, you can probably follow the standard setup details on the [libfranka Github](https://github.com/frankarobotics/libfranka). However, our lab has an older Panda, which requires libfranka 0.8.0. To get this to work, I had to make a minor change to libfranka which is available [here](https://github.com/danielpmorton/libfranka_08_patch).
-
-### Prerequisite: Oculus Reader
-
-Follow the steps as found on the [oculus_reader github page](https://github.com/rail-berkeley/oculus_reader). Then, install the package in your environment with
-```
-cd oculus_reader
-pip install -e .
-```
-
-When working with the Quest hardware, the following tips might be useful:
-- Go into settings and turn all of the automatic sleep times to the maximum value (4 hours)
-- Add a sticker on top of the proximity sensor on the inside of the headset
-- The Meta Quest 3 sometimes has some issues where it loses track of the controller, and then when it regains tracking, it "snaps" to the new location, leading to unstable robot control. The Quest 2 seems to be more stable here.
 
 ### OSCBF
 
@@ -42,19 +26,24 @@ See the README on the [OSCBF Github](https://github.com/StanfordASL/oscbf) for a
 
 ### OSCBF ROS2
 
-Finally, you'll need to clone this repo for the ROS2 hardware code
+These instructions assume that a ros2 workspace has already been created, with root folder called `ros2_ws`.
+
+Clone this repo for the ROS2 hardware code inside the `src` folder of your workspace:
+
 ```
-git clone https://github.com/StanfordASL/oscbf_hardware_ws
+cd ~/ros2_ws/src
+git clone https://github.com/AleBarte/oscbf_hardware.git
 ```
 Then, install python dependencies:
 ```
-cd oscbf_hardware_ws/src/oscbf_hardware_python
+cd oscbf_hardware/oscbf_hardware_python
 pip install -e .
 ```
-To build, run the following (Remember to `source /opt/ros/YOUR_ROS2_VERSION/setup.bash` beforehand)
+
+To build and source:
 ```
-cd oscbf_hardware_ws
-colcon build
+cd ~/ros2_ws
+colcon build --symlink-install
 source install/setup.bash
 ```
 
